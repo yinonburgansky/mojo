@@ -21,12 +21,16 @@ def test_out_of_bounds_message():
     l = List[Int](1, 2)
     # CHECK: index out of bounds: 2
     _ = normalize_index["List"](2, l)
+    # CHECK: index out of bounds: 2
+    _ = normalize_index["List"](UInt(2), l)
     # CHECK: index out of bounds: -3
     _ = normalize_index["List"](-3, l)
 
     l2 = List[Int]()
     # CHECK: indexing into a List that has 0 elements
     _ = normalize_index["List"](2, l2)
+    # CHECK: indexing into a List that has 0 elements
+    _ = normalize_index["List"](UInt(2), l2)
 
 
 def test_normalize_index():
@@ -39,6 +43,8 @@ def test_normalize_index():
     assert_equal(normalize_index[""](1, container), 1)
     assert_equal(normalize_index[""](2, container), 2)
     assert_equal(normalize_index[""](3, container), 3)
+    assert_equal(normalize_index[""](UInt(0), container), 0)
+    assert_equal(normalize_index[""](UInt(3), container), 3)
 
 
 def main():
