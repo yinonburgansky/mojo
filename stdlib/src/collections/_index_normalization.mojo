@@ -18,57 +18,92 @@ from sys.intrinsics import _type_is_eq
 
 @always_inline
 fn normalize_index[
-    I: Indexer, ContainerType: Sized, //, container_name: StringLiteral
-](idx: I, container: ContainerType) -> UInt:
+    IdxType: Indexer, //, container_name: StringLiteral
+](idx: IdxType, length: UInt) -> UInt:
     """Normalize the given index value to a valid index value for the given container length.
 
     If the provided value is negative, the `index + container_length` is returned.
 
     Parameters:
-        I: A type that can be used as an index.
-        ContainerType: The type of the container. Must have a `__len__` method.
+        IdxType: A type that can be used as an index.
         container_name: The name of the container. Used for the error message.
 
     Args:
         idx: The index value to normalize.
-        container: The container to normalize the index for.
+        length: The container length to normalize the index for.
 
     Returns:
         The normalized index value.
     """
-    debug_assert[assert_mode="safe", cpu_only=True](
-        len(container) > 0,
-        "indexing into a ",
-        container_name,
-        " that has 0 elements",
-    )
 
     @parameter
-    if _type_is_eq[I, UInt]():
-        var i = rebind[UInt](idx)
+    if (
+        _type_is_eq[IdxType, UInt]()
+        or _type_is_eq[IdxType, UInt8]()
+        or _type_is_eq[IdxType, UInt16]()
+        or _type_is_eq[IdxType, UInt32]()
+        or _type_is_eq[IdxType, UInt64]()
+    ):
+        var i = UInt(index(idx))
         debug_assert[assert_mode="safe", cpu_only=True](
-            i < len(container),
+            i < length,
             container_name,
             " index out of bounds: ",
             i,
             " should be less than ",
-            len(container),
+            length,
         )
         return i
     else:
+        # Optimize for the common case:
+        # Proper comparison between Int and UInt is slower and containers with
+        # more than Int.MAX elements are rare.
+        # Don't use "safe" since this is considered an overflow error.
+        debug_assert(
+            length <= UInt(Int.MAX),
+            "Overflow Error: ",
+            container_name,
+            " length is grater than Int.MAX (",
+            length,
+            "). Consider indexing with the UInt type.",
+        )
         var i = Int(idx)
+        # TODO: Consider a way to construct the error message after the assert has failed
+        # something like "Indexing into an empty container" if length == 0 else "..."
         debug_assert[assert_mode="safe", cpu_only=True](
-            -len(container) <= i < len(container),
+            -Int(length) <= i < Int(length),
             container_name,
             " has length: ",
-            len(container),
+            length,
             " index out of bounds: ",
             i,
             " should be between ",
-            -len(container),
+            -Int(length),
             " and ",
-            len(container) - 1,
+            length - 1,
         )
         if i >= 0:
             return i
-        return i + len(container)
+        return i + length
+
+
+@always_inline
+fn normalize_index[
+    IdxType: Indexer, //, container_name: StringLiteral
+](idx: IdxType, length: Int) -> Int:
+    """Normalize the given index value to a valid index value for the given container length.
+
+    If the provided value is negative, the `index + container_length` is returned.
+
+    Parameters:
+        IdxType: A type that can be used as an index.
+        container_name: The name of the container. Used for the error message.
+
+    Args:
+        idx: The index value to normalize.
+        length: The container length to normalize the index for.
+
+    Returns:
+        The normalized index value.
+    """
+    return Int(normalize_index[container_name](idx, UInt(length)))

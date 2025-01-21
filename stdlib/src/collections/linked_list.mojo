@@ -232,11 +232,16 @@ struct LinkedList[ElementType: WritableCollectionElement]:
             curr = curr[].next
         return new^
 
-    fn _get_node_ptr(ref self, index: Int) -> UnsafePointer[Node[ElementType]]:
+    fn _get_node_ptr[
+        I: Indexer
+    ](ref self, index: I) -> UnsafePointer[Node[ElementType]]:
         """Get a pointer to the node at the specified index.
 
         This method optimizes traversal by starting from either the head or tail
         depending on which is closer to the target index.
+
+        Parameters:
+            I: A type that can be used as an index.
 
         Args:
             index: The index of the node to get.
@@ -245,8 +250,7 @@ struct LinkedList[ElementType: WritableCollectionElement]:
             A pointer to the node at the specified index.
         """
         var l = len(self)
-        var i = normalize_index[container_name="LinkedList"](index, self)
-        debug_assert(0 <= i < l, "index out of bounds")
+        var i = normalize_index["LinkedList"](index, l)
         var mid = l // 2
         if i <= mid:
             var curr = self._head
@@ -259,8 +263,11 @@ struct LinkedList[ElementType: WritableCollectionElement]:
                 curr = curr[].prev
             return curr
 
-    fn __getitem__(ref self, index: Int) -> ref [self] ElementType:
+    fn __getitem__[I: Indexer](ref self, index: I) -> ref [self] ElementType:
         """Get the element at the specified index.
+
+        Parameters:
+            I: A type that can be used as an index.
 
         Args:
             index: The index of the element to get.
@@ -271,8 +278,11 @@ struct LinkedList[ElementType: WritableCollectionElement]:
         debug_assert(len(self) > 0, "unable to get item from empty list")
         return self._get_node_ptr(index)[].value
 
-    fn __setitem__(mut self, index: Int, owned value: ElementType):
+    fn __setitem__[I: Indexer](mut self, index: I, owned value: ElementType):
         """Set the element at the specified index.
+
+        Parameters:
+            I: A type that can be used as an index.
 
         Args:
             index: The index of the element to set.

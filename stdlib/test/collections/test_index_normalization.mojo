@@ -18,33 +18,78 @@ from testing import assert_equal
 
 
 def test_out_of_bounds_message():
-    l = List[Int](1, 2)
-    # CHECK: index out of bounds: 2
-    _ = normalize_index["List"](2, l)
-    # CHECK: index out of bounds: 2
-    _ = normalize_index["List"](UInt(2), l)
-    # CHECK: index out of bounds: -3
-    _ = normalize_index["List"](-3, l)
+    # CHECK: index out of bounds
+    _ = normalize_index[""](2, 2)
+    # CHECK: index out of bounds
+    _ = normalize_index[""](UInt(2), 2)
+    # CHECK: index out of bounds
+    _ = normalize_index[""](2, UInt(2))
+    # CHECK: index out of bounds
+    _ = normalize_index[""](UInt(2), UInt(2))
+    # CHECK: index out of bounds
+    _ = normalize_index[""](UInt8(2), 2)
 
-    l2 = List[Int]()
-    # CHECK: indexing into a List that has 0 elements
-    _ = normalize_index["List"](2, l2)
-    # CHECK: indexing into a List that has 0 elements
-    _ = normalize_index["List"](UInt(2), l2)
+    # CHECK: index out of bounds
+    _ = normalize_index[""](-3, 2)
+    # CHECK: index out of bounds
+    _ = normalize_index[""](-3, UInt(2))
+    # CHECK: index out of bounds
+    _ = normalize_index[""](Int8(-3), 2)
+
+    # CHECK: index out of bounds
+    _ = normalize_index[""](2, 0)
+    # CHECK: index out of bounds
+    _ = normalize_index[""](UInt(2), 0)
+    # CHECK: index out of bounds
+    _ = normalize_index[""](2, UInt(0))
+    # CHECK: index out of bounds
+    _ = normalize_index[""](UInt(2), UInt(0))
+
+    # CHECK: index out of bounds
+    _ = normalize_index[""](UInt.MAX, 10)
+    # CHECK: index out of bounds
+    _ = normalize_index[""](UInt.MAX, UInt(10))
+    # CHECK: index out of bounds
+    _ = normalize_index[""](UInt.MAX, UInt.MAX)
+    # CHECK: index out of bounds
+    _ = normalize_index[""](UInt.MAX, UInt.MAX - 10)
+
+    # CHECK: Overflow Error
+    _ = normalize_index[""](-1, UInt(Int.MAX + 1))
 
 
 def test_normalize_index():
-    container = List[Int](1, 1, 1, 1)
-    assert_equal(normalize_index[""](-4, container), 0)
-    assert_equal(normalize_index[""](-3, container), 1)
-    assert_equal(normalize_index[""](-2, container), 2)
-    assert_equal(normalize_index[""](-1, container), 3)
-    assert_equal(normalize_index[""](0, container), 0)
-    assert_equal(normalize_index[""](1, container), 1)
-    assert_equal(normalize_index[""](2, container), 2)
-    assert_equal(normalize_index[""](3, container), 3)
-    assert_equal(normalize_index[""](UInt(0), container), 0)
-    assert_equal(normalize_index[""](UInt(3), container), 3)
+    assert_equal(normalize_index[""](-3, 3), 0)
+    assert_equal(normalize_index[""](-2, 3), 1)
+    assert_equal(normalize_index[""](-1, 3), 2)
+    assert_equal(normalize_index[""](0, 3), 0)
+    assert_equal(normalize_index[""](1, 3), 1)
+    assert_equal(normalize_index[""](2, 3), 2)
+
+    assert_equal(normalize_index[""](-3, UInt(3)), 0)
+    assert_equal(normalize_index[""](-2, UInt(3)), 1)
+    assert_equal(normalize_index[""](-1, UInt(3)), 2)
+    assert_equal(normalize_index[""](0, UInt(3)), 0)
+    assert_equal(normalize_index[""](1, UInt(3)), 1)
+    assert_equal(normalize_index[""](2, UInt(3)), 2)
+
+    assert_equal(normalize_index[""](UInt(0), UInt(3)), 0)
+    assert_equal(normalize_index[""](UInt(1), UInt(3)), 1)
+    assert_equal(normalize_index[""](UInt(2), UInt(3)), 2)
+
+    assert_equal(normalize_index[""](Int8(-3), 3), 0)
+    assert_equal(normalize_index[""](Int8(-2), 3), 1)
+    assert_equal(normalize_index[""](Int8(-1), 3), 2)
+    assert_equal(normalize_index[""](Int8(0), 3), 0)
+    assert_equal(normalize_index[""](Int8(1), 3), 1)
+    assert_equal(normalize_index[""](Int8(2), 3), 2)
+
+    assert_equal(normalize_index[""](UInt8(0), 3), 0)
+    assert_equal(normalize_index[""](UInt8(1), 3), 1)
+    assert_equal(normalize_index[""](UInt8(2), 3), 2)
+
+    assert_equal(normalize_index[""](UInt(1), UInt.MAX), 1)
+    assert_equal(normalize_index[""](UInt.MAX - 5, UInt.MAX), UInt.MAX - 5)
 
 
 def main():
