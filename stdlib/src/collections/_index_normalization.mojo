@@ -45,46 +45,47 @@ fn normalize_index[
         or _type_is_eq[IdxType, UInt64]()
     ):
         var i = UInt(index(idx))
+        # TODO: Consider a way to construct the error message after the assert has failed
+        # something like "Indexing into an empty container" if length == 0 else "..."
         debug_assert[assert_mode="safe", cpu_only=True](
             i < length,
             container_name,
-            " index out of bounds: ",
+            " index out of bounds: index (",
             i,
-            " should be less than ",
+            ") valid range: -",  # can't print -UInt.MAX
+            length,
+            " <= index < ",
             length,
         )
         return i
     else:
-        # Optimize for the common case:
-        # Proper comparison between Int and UInt is slower and containers with
-        # more than Int.MAX elements are rare.
-        # Don't use "safe" since this is considered an overflow error.
-        debug_assert(
-            length <= UInt(Int.MAX),
-            "Overflow Error: ",
-            container_name,
-            " length is grater than Int.MAX (",
-            length,
-            "). Consider indexing with the UInt type.",
-        )
-        var i = Int(idx)
-        # TODO: Consider a way to construct the error message after the assert has failed
-        # something like "Indexing into an empty container" if length == 0 else "..."
+        var i = UInt(index(idx))
+        if Int(i) < 0:
+            i += length
+        # Checking the bounds after the normalization saves a comparison
+        # while allowing negative indexing into containers with length > Int.MAX.
+        # For a positive index this is trivially correct.
+        # For a negative index we can infer the full bounds check from
+        # the assert UInt(idx + length) < length, by considering 2 cases:
+        #   when length > Int.MAX then:
+        #     idx + length > idx + Int.MAX >= Int.MIN + Int.MAX = -1
+        #     therefore idx + length >= 0
+        #   when length <= Int.MAX then:
+        #     UInt(idx + length) < length <= Int.MAX
+        #     Which means UInt(idx + length) signed bit is off
+        #     therefore idx + length >= 0
+        # in either case we can infer 0 <= idx + length < length
         debug_assert[assert_mode="safe", cpu_only=True](
-            -Int(length) <= i < Int(length),
+            i < length,
             container_name,
-            " has length: ",
+            " index out of bounds: index (",
+            Int(idx),
+            ") valid range: -",  # can't print -UInt.MAX
             length,
-            " index out of bounds: ",
-            i,
-            " should be between ",
-            -Int(length),
-            " and ",
-            length - 1,
+            " <= index < ",
+            length,
         )
-        if i >= 0:
-            return i
-        return i + length
+        return i
 
 
 @always_inline

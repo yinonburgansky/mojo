@@ -46,6 +46,17 @@ def test_out_of_bounds_message():
     _ = normalize_index[""](UInt(2), UInt(0))
 
     # CHECK: index out of bounds
+    _ = normalize_index[""](Int.MIN, 10)
+    # CHECK: index out of bounds
+    _ = normalize_index[""](Int.MIN, UInt(10))
+    # CHECK: index out of bounds
+    _ = normalize_index[""](Int.MAX, 10)
+    # CHECK: index out of bounds
+    _ = normalize_index[""](Int.MAX, UInt(10))
+    # CHECK: index out of bounds
+    _ = normalize_index[""](Int.MIN, Int.MAX)
+
+    # CHECK: index out of bounds
     _ = normalize_index[""](UInt.MAX, 10)
     # CHECK: index out of bounds
     _ = normalize_index[""](UInt.MAX, UInt(10))
@@ -53,9 +64,6 @@ def test_out_of_bounds_message():
     _ = normalize_index[""](UInt.MAX, UInt.MAX)
     # CHECK: index out of bounds
     _ = normalize_index[""](UInt.MAX, UInt.MAX - 10)
-
-    # CHECK: Overflow Error
-    _ = normalize_index[""](-1, UInt(Int.MAX + 1))
 
 
 def test_normalize_index():
@@ -90,6 +98,13 @@ def test_normalize_index():
 
     assert_equal(normalize_index[""](UInt(1), UInt.MAX), 1)
     assert_equal(normalize_index[""](UInt.MAX - 5, UInt.MAX), UInt.MAX - 5)
+
+    assert_equal(normalize_index[""](-1, Int.MAX), Int.MAX - 1)
+    assert_equal(normalize_index[""](-10, Int.MAX), Int.MAX - 10)
+    assert_equal(normalize_index[""](-1, UInt.MAX), UInt.MAX - 1)
+    assert_equal(normalize_index[""](-10, UInt.MAX), UInt.MAX - 10)
+    assert_equal(normalize_index[""](-1, UInt(Int.MAX) + 1), UInt(Int.MAX))
+    assert_equal(normalize_index[""](Int.MIN, UInt(Int.MAX) + 1), 0)
 
 
 def main():
